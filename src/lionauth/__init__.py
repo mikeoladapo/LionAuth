@@ -5,6 +5,7 @@ from .exceptions import (
     InvalidOTPError,
     InvalidSecretError,
     LionAuthError,
+    InvalidInputError
 )
 from .totp import TOTPAuthenticator
 

@@ -13,7 +13,16 @@ class TOTPAuthenticator:
     def generate_secret(self) -> str:
         return pyotp.random_base32()
 
+    def _validate_secret(self, secret: str) -> None:
+        if not isinstance(secret, str):
+            raise InvalidSecretError("Secret must be a string")
+
+        if not secret.strip():
+            raise InvalidSecretError("Secret cannot be empty")
+
     def _create_totp(self, secret: str) -> pyotp.TOTP:
+        self._validate_secret(secret)
+
         try:
             algorithms = {
                 "SHA1": hashlib.sha1,
@@ -29,7 +38,6 @@ class TOTPAuthenticator:
             )
         except Exception as exc:
             raise InvalidSecretError("Invalid TOTP secret") from exc
-
 
     def generate_otp(self, secret: str) -> str:
         totp = self._create_totp(secret)
@@ -62,3 +70,4 @@ class TOTPAuthenticator:
             name=account_name,
             issuer_name=self.config.issuer,
         )
+    

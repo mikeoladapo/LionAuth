@@ -12,3 +12,6 @@ class InvalidSecretError(LionAuthError):
 
 class InvalidOTPError(LionAuthError):
     """Raised when an OTP is invalid."""
+
+class InvalidInputError(LionAuthError):
+    """Raised when a LionAuth input is invalid."""
