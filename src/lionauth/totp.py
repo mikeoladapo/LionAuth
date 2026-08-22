@@ -18,10 +18,15 @@ class TOTPAuthenticator:
         )
 
     def generate_otp(self, secret: str) -> str:
-        totp = pyotp.TOTP(secret)
+        totp = self._create_totp(secret)
         return totp.now()
 
+
     def verify(self, secret: str, otp: str) -> bool:
-        totp = pyotp.TOTP(secret)
-        return totp.verify(otp)
+        totp = self._create_totp(secret)
+        return totp.verify(
+            otp,
+            valid_window=self.config.valid_window,
+        )
+
     
