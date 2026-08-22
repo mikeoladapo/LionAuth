@@ -5,22 +5,46 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "lionauth"
 version = "0.1.0"
-description = "A reusable TOTP authentication library for Python"
+description = "A reusable Python library for Time-based One-Time Password (TOTP) authentication"
 readme = "README.md"
 requires-python = ">=3.10"
+license = { file = "LICENSE" }
+
+author = [
+    { name = "Micheal Oladokun" }
+]
+
+keywords = [
+    "authentication",
+    "totp",
+    "otp",
+    "2fa",
+    "mfa",
+    "security",
+    "authenticator"
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 dependencies = [
     "pyotp>=2.9",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-]
+[project.urls]
+Homepage = "https://github.com/mikeoladapo/LionAuth"
+Repository = "https://github.com/mikeoladapo/LionAuth"
+Issues = "https://github.com/mikeoladapo/LionAuth/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["src"]
