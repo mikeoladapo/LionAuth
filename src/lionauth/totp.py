@@ -1,6 +1,7 @@
 import pyotp
 
 from .config import TOTPConfig
+from .exceptions import InvalidOTPError, InvalidSecretError
 
 
 class TOTPAuthenticator:
@@ -12,12 +13,15 @@ class TOTPAuthenticator:
         return pyotp.random_base32()
 
     def _create_totp(self, secret: str) -> pyotp.TOTP:
-        return pyotp.TOTP(
-            secret,
-            digits=self.config.digits,
-            interval=self.config.interval,
-            digest=self.config.algorithm.lower(),
-        )
+        try:
+            return pyotp.TOTP(
+                secret,
+                digits=self.config.digits,
+                interval=self.config.interval,
+                digest=self.config.algorithm.lower(),
+            )
+        except Exception as exc:
+            raise InvalidSecretError("Invalid TOTP secret") from exc
 
     def generate_otp(self, secret: str) -> str:
         totp = self._create_totp(secret)
@@ -26,7 +30,15 @@ class TOTPAuthenticator:
     def verify(self, secret: str, otp: str) -> bool:
         totp = self._create_totp(secret)
 
-        return totp.verify(
-            otp,
-            valid_window=self.config.valid_window,
-        )
+        try:
+            is_valid = totp.verify(
+                otp,
+                valid_window=self.config.valid_window,
+            )
+        except Exception as exc:
+            raise InvalidSecretError("Invalid TOTP secret") from exc
+
+        if not is_valid:
+            raise InvalidOTPError("Invalid OTP")
+
+        return True
