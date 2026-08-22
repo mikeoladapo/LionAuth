@@ -1,8 +1,10 @@
 import pyotp
+
 from .config import TOTPConfig
 
 
 class TOTPAuthenticator:
+
     def __init__(self, config: TOTPConfig | None = None):
         self.config = config or TOTPConfig()
 
@@ -21,12 +23,10 @@ class TOTPAuthenticator:
         totp = self._create_totp(secret)
         return totp.now()
 
-
     def verify(self, secret: str, otp: str) -> bool:
         totp = self._create_totp(secret)
+
         return totp.verify(
             otp,
             valid_window=self.config.valid_window,
         )
-
-    
