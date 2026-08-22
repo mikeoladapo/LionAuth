@@ -42,3 +42,15 @@ class TOTPAuthenticator:
             raise InvalidOTPError("Invalid OTP")
 
         return True
+    
+    def get_provisioning_uri(
+        self,
+        secret: str,
+        account_name: str,
+    ) -> str:
+        totp = self._create_totp(secret)
+
+        return totp.provisioning_uri(
+            name=account_name,
+            issuer_name=self.config.issuer,
+        )

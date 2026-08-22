@@ -1,4 +1,5 @@
 from .config import TOTPConfig
+from .config import TOTPConfig
 from .exceptions import (
     ConfigurationError,
     InvalidOTPError,
