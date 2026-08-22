@@ -2,9 +2,9 @@
 
 A reusable Python library for implementing **Time-based One-Time Password (TOTP) authentication**.
 
-LionAuth provides the core functionality needed to integrate authenticator-app-based authentication into Python applications.
+LionAuth provides the core functionality required to integrate authenticator-app-based authentication into Python applications.
 
-It works with authenticator applications such as **Google Authenticator** and **Microsoft Authenticator**.
+It is designed to work with compatible authenticator applications such as **Google Authenticator** and **Microsoft Authenticator**.
 
 ---
 
@@ -13,12 +13,13 @@ It works with authenticator applications such as **Google Authenticator** and **
 - TOTP secret generation
 - OTP generation
 - OTP verification
-- Configurable OTP digits
-- Configurable time interval
+- Configurable OTP digit length
+- Configurable OTP time interval
 - SHA1, SHA256, and SHA512 support
-- Provisioning URI generation
+- Standard `otpauth://` provisioning URI generation
 - Input validation
 - Custom authentication exceptions
+- Configurable verification window
 - No database required
 - No QR-code dependency
 - Framework independent
@@ -36,13 +37,18 @@ It works with authenticator applications such as **Google Authenticator** and **
 
 Install LionAuth using pip:
 
+```bash
+pip install lionauth
+```
 
-pip install lionauth 
+---
 
-## Quick Start
+# Quick Start
 
+```python
 from lionauth import TOTPAuthenticator
 
+# Create the authenticator
 auth = TOTPAuthenticator()
 
 # Generate a TOTP secret
@@ -58,65 +64,81 @@ uri = auth.get_provisioning_uri(
 
 print("Provisioning URI:", uri)
 
-# Generate an OTP
+# Generate the current OTP
 otp = auth.generate_otp(secret)
 
 print("OTP:", otp)
 
 # Verify the OTP
-result = auth.verify(secret, otp)
+result = auth.verify(
+    secret=secret,
+    otp=otp,
+)
 
 print("Verified:", result)
+```
 
-Output:
+Example output:
 
+```text
 Secret: JBSWY3DPEHPK3PXP
 Provisioning URI: otpauth://totp/...
 OTP: 123456
 Verified: True
-How LionAuth Works
+```
 
-LionAuth uses the Time-based One-Time Password (TOTP) standard.
+---
+
+# How LionAuth Works
+
+LionAuth implements **Time-based One-Time Password (TOTP)** authentication.
+
+A TOTP system uses a shared secret between an application and an authenticator application. Both sides use the secret and the current time to generate the same temporary one-time password.
 
 The basic process is:
 
-                    LionAuth
-                       |
-                       |
-               Generate Secret
-                       |
-                       v
-                 TOTP Secret
-                       |
-                       |
-          +------------+------------+
-          |                         |
-          v                         v
-    Authenticator App          Application
-          |                         |
-          |                         |
-    Generates OTP             Stores Secret
-          |                         |
-          +------------+------------+
-                       |
-                       v
+```text
+                     LionAuth
+                        |
+                        |
+                 Generate Secret
+                        |
+                        v
+                  TOTP Secret
+                        |
+              +---------+---------+
+              |                   |
+              v                   v
+       Authenticator App      Application
+              |                   |
+              |                   |
+        Generates OTP        Stores Secret
+              |                   |
+              +---------+---------+
+                        |
+                        v
                   User enters OTP
-                       |
-                       v
-                 LionAuth.verify()
-                       |
-                +------+------+
-                |             |
-              Valid         Invalid
-                |             |
-              True      InvalidOTPError
+                        |
+                        v
+                LionAuth.verify()
+                        |
+                 +------+------+
+                 |             |
+               Valid         Invalid
+                 |             |
+                 v             v
+               True      InvalidOTPError
+```
 
 The application integrating LionAuth is responsible for managing users and securely storing their TOTP secrets.
 
-Generating a Secret
+---
+
+# Generating a Secret
 
 Generate a new TOTP secret using:
 
+```python
 from lionauth import TOTPAuthenticator
 
 auth = TOTPAuthenticator()
@@ -124,68 +146,105 @@ auth = TOTPAuthenticator()
 secret = auth.generate_secret()
 
 print(secret)
+```
 
-The generated secret should be treated as a sensitive authentication credential.
+The generated secret is a sensitive authentication credential.
 
-Applications should store it securely and should never expose it unnecessarily.
+Applications should:
 
-Provisioning URI
+- Store it securely.
+- Protect it from unauthorized access.
+- Never expose it unnecessarily.
+- Never commit it to source control.
+- Avoid logging it.
 
-LionAuth can generate a standard otpauth:// provisioning URI.
+---
 
+# Provisioning URI
+
+LionAuth can generate a standard `otpauth://` provisioning URI.
+
+```python
 uri = auth.get_provisioning_uri(
     secret=secret,
     account_name="user@example.com",
 )
 
 print(uri)
+```
 
 Example:
 
+```text
 otpauth://totp/LionAuth:user%40example.com?secret=XXXXXXXX&issuer=LionAuth&algorithm=SHA1&digits=6&period=30
+```
 
 The URI contains the information required by compatible authenticator applications to configure the TOTP account.
 
-LionAuth intentionally does not generate QR codes.
+LionAuth intentionally does **not** generate QR codes.
 
-Applications are free to decide how they want to present the provisioning URI to users.
+This keeps the library lightweight and allows the application integrating LionAuth to decide how the provisioning URI should be presented to the user.
 
-Generating an OTP
+For example, an application may choose to:
 
-Generate the current OTP:
+- Display the URI directly.
+- Generate its own QR code.
+- Provide the URI through another secure provisioning mechanism.
 
+---
+
+# Generating an OTP
+
+Generate the current OTP using:
+
+```python
 otp = auth.generate_otp(secret)
 
 print(otp)
+```
 
 Example:
 
+```text
 483921
+```
 
 The OTP changes according to the configured time interval.
 
-Verifying an OTP
+---
+
+# Verifying an OTP
 
 Verify an OTP using:
 
+```python
 result = auth.verify(
     secret=secret,
     otp=otp,
 )
 
 print(result)
+```
 
 A valid OTP returns:
 
+```python
 True
+```
 
 An invalid OTP raises:
 
+```python
 InvalidOTPError
+```
 
 Example:
 
-from lionauth import TOTPAuthenticator, InvalidOTPError
+```python
+from lionauth import (
+    TOTPAuthenticator,
+    InvalidOTPError,
+)
 
 auth = TOTPAuthenticator()
 
@@ -198,11 +257,19 @@ try:
 
 except InvalidOTPError:
     print("Invalid authentication code")
-Configuration
+```
 
-LionAuth provides TOTPConfig for customizing the TOTP behavior.
+---
 
-from lionauth import TOTPAuthenticator, TOTPConfig
+# Configuration
+
+LionAuth provides `TOTPConfig` for customizing TOTP behavior.
+
+```python
+from lionauth import (
+    TOTPAuthenticator,
+    TOTPConfig,
+)
 
 config = TOTPConfig(
     digits=6,
@@ -213,26 +280,44 @@ config = TOTPConfig(
 )
 
 auth = TOTPAuthenticator(config)
-Configuration Options
-Option	Default	Description
-digits	6	Number of digits in the generated OTP
-interval	30	Number of seconds before the OTP changes
-algorithm	SHA1	Hashing algorithm
-issuer	LionAuth	Application/service name
-valid_window	0	Number of adjacent time windows accepted during verification
+```
 
-Supported algorithms:
+---
 
+# Configuration Options
+
+| Option | Default | Description |
+|---|---:|---|
+| `digits` | `6` | Number of digits in the generated OTP |
+| `interval` | `30` | Number of seconds before the OTP changes |
+| `algorithm` | `SHA1` | Hashing algorithm |
+| `issuer` | `LionAuth` | Application/service name |
+| `valid_window` | `0` | Number of adjacent time windows accepted during verification |
+
+### Supported algorithms
+
+```text
 SHA1
 SHA256
 SHA512
+```
 
-Supported OTP digit lengths:
+### Supported OTP digit lengths
 
+```text
 6
 8
-Example Custom Configuration
-from lionauth import TOTPAuthenticator, TOTPConfig
+```
+
+---
+
+# Custom Configuration Example
+
+```python
+from lionauth import (
+    TOTPAuthenticator,
+    TOTPConfig,
+)
 
 config = TOTPConfig(
     digits=8,
@@ -248,13 +333,18 @@ secret = auth.generate_secret()
 
 otp = auth.generate_otp(secret)
 
-print(otp)
+print("OTP:", otp)
 
-print(auth.verify(secret, otp))
-Enrollment Workflow
+print("Verified:", auth.verify(secret, otp))
+```
+
+---
+
+# Enrollment Workflow
 
 A typical authenticator enrollment process looks like this:
 
+```text
 1. User chooses to enable authenticator authentication
                          |
                          v
@@ -286,16 +376,38 @@ A typical authenticator enrollment process looks like this:
                 Valid         Invalid
                   |             |
                   v             v
-          Enable TOTP      Reject OTP
+          Enable TOTP       Reject OTP
+```
 
-The application should not mark TOTP as enabled merely because a secret was generated.
+The application should **not** mark TOTP as enabled merely because a secret was generated.
 
 The user should first prove that their authenticator application is correctly configured by successfully providing a valid OTP.
 
-Authentication Workflow
+A recommended enrollment state is:
+
+```text
+Secret generated
+       |
+       v
+Pending enrollment
+       |
+       v
+User provides OTP
+       |
+       v
+OTP verified
+       |
+       v
+TOTP enabled
+```
+
+---
+
+# Authentication Workflow
 
 After enrollment, authentication works like this:
 
+```text
 User
  |
  | Login
@@ -330,10 +442,17 @@ True       Error
  |
  v
 Application grants access
-Exceptions
+```
+
+LionAuth verifies the OTP. The application remains responsible for deciding what happens after successful verification, such as creating a session or issuing a JWT.
+
+---
+
+# Exceptions
 
 LionAuth provides its own exception hierarchy.
 
+```python
 from lionauth import (
     LionAuthError,
     ConfigurationError,
@@ -341,7 +460,11 @@ from lionauth import (
     InvalidOTPError,
     InvalidInputError,
 )
-Exception Hierarchy
+```
+
+## Exception Hierarchy
+
+```text
 LionAuthError
 |
 +-- ConfigurationError
@@ -351,12 +474,17 @@ LionAuthError
 +-- InvalidOTPError
 |
 +-- InvalidInputError
-LionAuthError
+```
 
-Base exception for LionAuth errors.
+---
 
-You can catch all LionAuth errors using:
+## LionAuthError
 
+`LionAuthError` is the base exception for LionAuth errors.
+
+You can catch all LionAuth-specific errors using:
+
+```python
 from lionauth import LionAuthError
 
 try:
@@ -364,27 +492,40 @@ try:
 
 except LionAuthError:
     print("A LionAuth error occurred")
-ConfigurationError
+```
+
+---
+
+## ConfigurationError
 
 Raised when the TOTP configuration is invalid.
 
 Example:
 
-from lionauth import TOTPConfig, ConfigurationError
+```python
+from lionauth import (
+    TOTPConfig,
+    ConfigurationError,
+)
 
 try:
     config = TOTPConfig(
-        digits=7
+        digits=7,
     )
 
 except ConfigurationError as error:
     print(error)
-InvalidSecretError
+```
+
+---
+
+## InvalidSecretError
 
 Raised when an invalid TOTP secret is supplied.
 
 Example:
 
+```python
 from lionauth import InvalidSecretError
 
 try:
@@ -392,12 +533,17 @@ try:
 
 except InvalidSecretError as error:
     print(error)
-InvalidOTPError
+```
+
+---
+
+## InvalidOTPError
 
 Raised when an OTP is invalid.
 
 Example:
 
+```python
 from lionauth import InvalidOTPError
 
 try:
@@ -408,12 +554,17 @@ try:
 
 except InvalidOTPError:
     print("Invalid OTP")
-InvalidInputError
+```
 
-Raised when an input doesn't meet the expected requirements.
+---
+
+## InvalidInputError
+
+Raised when an input does not meet the expected requirements.
 
 Example:
 
+```python
 from lionauth import InvalidInputError
 
 try:
@@ -424,36 +575,45 @@ try:
 
 except InvalidInputError as error:
     print(error)
-What LionAuth Does Not Handle
+```
+
+---
+
+# What LionAuth Does Not Handle
 
 LionAuth is intentionally focused on TOTP authentication.
 
-It does not manage:
+It does **not** manage:
 
-User accounts
-User registration
-Password authentication
-Password storage
-Databases
-JWT authentication
-Sessions
-Email delivery
-SMS OTP
-QR-code generation
-User permissions
-Roles
-Application-specific authorization
+- User accounts
+- User registration
+- Password authentication
+- Password storage
+- Databases
+- JWT authentication
+- Sessions
+- Email delivery
+- SMS OTP
+- QR-code generation
+- User permissions
+- Roles
+- Application-specific authorization
 
 These responsibilities belong to the application integrating LionAuth.
 
-Database
+This separation allows LionAuth to remain lightweight and framework independent.
+
+---
+
+# Database
 
 LionAuth does not require a database.
 
 The application using LionAuth is responsible for storing the user's TOTP secret.
 
-For example, an application might have:
+For example, an application might have a user record containing:
 
+```text
 users
 --------------------------------
 id
@@ -461,9 +621,13 @@ email
 name
 totp_secret
 totp_enabled
+```
 
-LionAuth only works with the secret provided by the application.
+The exact database structure is left to the application.
 
+The relationship is:
+
+```text
 Application Database
         |
         | TOTP secret
@@ -475,85 +639,195 @@ Application Database
         +-- Verify OTP
         |
         +-- Generate provisioning URI
-Security
+```
+
+LionAuth itself does not store users or TOTP secrets in a database.
+
+---
+
+# Security Considerations
 
 TOTP secrets are sensitive authentication credentials.
 
 Applications using LionAuth should:
 
-Store TOTP secrets securely.
-Never expose TOTP secrets in logs.
-Never expose secrets to clients unnecessarily.
-Encrypt or otherwise appropriately protect secrets at rest.
-Require successful OTP verification before completing enrollment.
-Use a reasonable valid_window.
-Protect authentication endpoints against brute-force attempts.
-Avoid returning secrets in API responses unless necessary.
-Avoid storing OTPs permanently.
-Never commit TOTP secrets to source control.
+- Store TOTP secrets securely.
+- Protect secrets from unauthorized access.
+- Never expose TOTP secrets in logs.
+- Never expose secrets to clients unnecessarily.
+- Protect secrets at rest using appropriate application and database security controls.
+- Require successful OTP verification before completing enrollment.
+- Use a reasonable `valid_window`.
+- Protect authentication endpoints against brute-force attempts.
+- Apply appropriate rate limiting to OTP verification endpoints.
+- Avoid storing OTPs permanently.
+- Never commit TOTP secrets to source control.
+- Avoid returning TOTP secrets in API responses unless absolutely necessary.
 
-LionAuth itself does not store users or TOTP secrets in a database.
+### Important
 
-Development
+A TOTP secret should be treated like a password.
+
+Anyone who obtains the secret can generate valid OTPs for that account.
+
+LionAuth provides the TOTP functionality, but the application integrating LionAuth is responsible for protecting the secret and the authentication endpoint.
+
+---
+
+# Development
 
 Clone the project:
 
+```bash
 git clone <repository-url>
+```
 
 Enter the project directory:
 
+```bash
 cd LionAuth
+```
 
 Create a virtual environment:
 
+```bash
 python -m venv venv
+```
 
-Activate the virtual environment:
+Activate the virtual environment.
 
-Linux/macOS
+### Linux/macOS
+
+```bash
 source venv/bin/activate
-Windows
+```
+
+### Windows
+
+```powershell
 venv\Scripts\activate
+```
 
 Install LionAuth with development dependencies:
 
+```bash
 pip install -e ".[dev]"
-Running Tests
+```
 
-LionAuth uses pytest.
+---
+
+# Running Tests
+
+LionAuth uses `pytest` for automated testing.
 
 Run the complete test suite:
 
+```bash
 pytest
+```
 
 A successful test run should look similar to:
 
+```text
 ======================== test session starts ========================
 
 tests/test_config.py ........
 tests/test_totp.py .........
 
-========================= 17 passed =========================
-Building the Package
+========================= XX passed =========================
+```
 
-Install the build tool:
+The exact number of tests may change as the project evolves.
 
+---
+
+# Building the Package
+
+Install the Python build tool:
+
+```bash
 pip install build
+```
 
 Build LionAuth:
 
+```bash
 python -m build
+```
 
 The distribution files will be generated inside:
 
+```text
 dist/
+```
 
 Example:
 
+```text
 dist/
 ├── lionauth-0.1.0-py3-none-any.whl
 └── lionauth-0.1.0.tar.gz
-Project Structure
+```
+
+The `.whl` file is the wheel distribution and the `.tar.gz` file is the source distribution.
+
+---
+
+# Testing the Built Package
+
+You can test the built package in a clean virtual environment.
+
+Create a separate environment:
+
+```bash
+python -m venv test-env
+```
+
+Activate it:
+
+### Linux/macOS
+
+```bash
+source test-env/bin/activate
+```
+
+### Windows
+
+```powershell
+test-env\Scripts\activate
+```
+
+Install the built wheel:
+
+```bash
+pip install dist/lionauth-0.1.0-py3-none-any.whl
+```
+
+Then test:
+
+```python
+from lionauth import TOTPAuthenticator
+
+auth = TOTPAuthenticator()
+
+secret = auth.generate_secret()
+
+otp = auth.generate_otp(secret)
+
+print(auth.verify(secret, otp))
+```
+
+Expected output:
+
+```text
+True
+```
+
+---
+
+# Project Structure
+
+```text
 LionAuth/
 |
 +-- src/
@@ -572,68 +846,142 @@ LionAuth/
 |
 +-- pyproject.toml
 +-- README.md
-Design Philosophy
+```
+
+---
+
+# Design Philosophy
 
 LionAuth follows a simple principle:
 
-LionAuth handles TOTP. The application handles everything else.
+> **LionAuth handles TOTP. The application handles everything else.**
 
 This keeps the library:
 
-Lightweight
-Framework independent
-Database independent
-Easy to integrate
-Easy to test
-Reusable across Python applications
+- Lightweight
+- Framework independent
+- Database independent
+- Easy to integrate
+- Easy to test
+- Reusable across Python applications
 
-LionAuth can be integrated into applications built with frameworks such as:
+LionAuth can be integrated into applications built with:
 
-Django
-FastAPI
-Flask
-Other Python web frameworks
-CLI applications
-Custom Python applications
-Complete Example
+- Django
+- FastAPI
+- Flask
+- Other Python web frameworks
+- CLI applications
+- Custom Python applications
+
+---
+
+# Complete Example
+
+```python
 from lionauth import (
     TOTPAuthenticator,
     InvalidOTPError,
 )
 
-# Create authenticator
+# Create the authenticator
 auth = TOTPAuthenticator()
 
 # Generate a secret during enrollment
 secret = auth.generate_secret()
 
-# Generate provisioning URI
+print("Secret:", secret)
+
+# Generate a provisioning URI
 uri = auth.get_provisioning_uri(
     secret=secret,
     account_name="user@example.com",
 )
 
-print("Configure your authenticator using:")
-print(uri)
+print("Provisioning URI:", uri)
 
-# Generate current OTP
+# The user configures their authenticator application
+# and obtains an OTP.
+
+# Generate the current OTP for demonstration purposes
 otp = auth.generate_otp(secret)
 
 print("Current OTP:", otp)
 
-# Verify OTP
+# Verify the OTP
 try:
-    if auth.verify(secret, otp):
+    if auth.verify(
+        secret=secret,
+        otp=otp,
+    ):
         print("Authentication successful")
 
 except InvalidOTPError:
     print("Authentication failed")
-License
+```
+
+---
+
+# API Overview
+
+| Method | Description |
+|---|---|
+| `generate_secret()` | Generates a new TOTP secret |
+| `generate_otp(secret)` | Generates the current OTP |
+| `verify(secret, otp)` | Verifies an OTP |
+| `get_provisioning_uri(secret, account_name)` | Generates an `otpauth://` provisioning URI |
+
+---
+
+# Example Integration
+
+LionAuth can be used as the TOTP layer inside a larger authentication system.
+
+For example:
+
+```text
+                    Your Application
+                           |
+            +--------------+--------------+
+            |                             |
+            v                             v
+       User Management              Authentication
+            |                             |
+            |                       +-----+-----+
+            |                       |           |
+            |                      Login       TOTP
+            |                                   |
+            |                                   v
+            |                              LionAuth
+            |                                   |
+            |                              OTP verify
+            |                                   |
+            +---------------+-------------------+
+                            |
+                            v
+                       Authorization
+```
+
+The application can use its existing authentication system while delegating TOTP operations to LionAuth.
+
+---
+
+# Version
+
+Current version:
+
+```text
+0.1.0
+```
+
+---
+
+# License
 
 MIT
 
-Author
+---
+
+# Author
 
 LionAuth is a reusable TOTP authentication library for Python applications.
-
-
