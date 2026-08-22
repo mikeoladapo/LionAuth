@@ -1,6 +1,11 @@
 import pyotp
+from .config import TOTPConfig
+
 
 class TOTPAuthenticator:
+    def __init__(self, config: TOTPConfig | None = None):
+        self.config = config or TOTPConfig()
+
     def generate_secret(self) -> str:
         return pyotp.random_base32()
 
