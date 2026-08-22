@@ -2,7 +2,7 @@ import pyotp
 import hashlib
 
 from .config import TOTPConfig
-from .exceptions import InvalidOTPError, InvalidSecretError
+from .exceptions import InvalidOTPError, InvalidSecretError, InvalidInputError
 
 
 class TOTPAuthenticator:
@@ -38,12 +38,26 @@ class TOTPAuthenticator:
             )
         except Exception as exc:
             raise InvalidSecretError("Invalid TOTP secret") from exc
-
+    
     def generate_otp(self, secret: str) -> str:
         totp = self._create_totp(secret)
         return totp.now()
 
+    def _validate_otp(self, otp: str) -> None:
+        if not isinstance(otp, str):
+            raise InvalidInputError("OTP must be a string")
+
+        if not otp.isdigit():
+            raise InvalidOTPError("OTP must contain only digits")
+
+        if len(otp) != self.config.digits:
+            raise InvalidOTPError(
+                f"OTP must contain exactly {self.config.digits} digits"
+            )
+        
     def verify(self, secret: str, otp: str) -> bool:
+        self._validate_otp(otp)
+
         totp = self._create_totp(secret)
 
         try:
@@ -58,16 +72,27 @@ class TOTPAuthenticator:
             raise InvalidOTPError("Invalid OTP")
 
         return True
-    
+        
     def get_provisioning_uri(
         self,
         secret: str,
         account_name: str,
     ) -> str:
+
+        if not isinstance(account_name, str):
+            raise InvalidInputError(
+                "account_name must be a string"
+            )
+
+        if not account_name.strip():
+            raise InvalidInputError(
+                "account_name cannot be empty"
+            )
+
         totp = self._create_totp(secret)
 
         return totp.provisioning_uri(
             name=account_name,
             issuer_name=self.config.issuer,
         )
-    
+        
